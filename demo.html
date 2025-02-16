@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作業件名検索(入力・修正)</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #66FFFF;
+        }
+        a {
+            color: blue;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background-color: #0000FF;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .el-table {
+            --el-table-border-color: #000;
+            --el-table-row-hover-bg-color: none;
+        }
+
+        .flex-container {
+            display: flex;
+        }
+
+        .search-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            row-gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .search-item {
+            display: flex;
+            align-items: center;
+        }
+        .search-item span {
+            min-width: 30%;
+            text-align: right;
+            padding: 5px;
+        }
+        .one {
+            grid-column: 1/2;
+        }
+        .two {
+            grid-column: 2/3;
+        }
+        .four {
+            grid-column: 4/5;
+            justify-content: end;
+        }
+        @media (max-width: 800px) {
+            * {
+                font-size: 12px;
+            }
+            .flex-container {
+                flex-direction: column;
+            }
+            .search-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .one {
+                grid-column: 1/3;
+            }
+            .one .title-select {
+                min-width: 15%;
+            }
+            .two {
+                grid-column: 1/2;
+            }
+            .four {
+                grid-column: 2/3;
+            }
+            .el-date-range-picker {
+                width: 343px;
+            }
+            .el-date-range-picker .el-picker-panel__body {
+                min-width: unset;
+            }
+            .el-date-range-picker__content {
+                float: unset;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <el-header class="header">
+            <div style="color: yellow; font-size: 20px;">作業件名検索(入力・修正)</div>
+        </el-header>
+        <h3 style="margin-top: 60px">
+            検索条件
+        </h3>
+        <div class="search-container">
+            <div class="search-item">
+                <span class="title-select">店所</span>
+                <el-select v-model="valueSelect1" placeholder="">
+                    <el-option v-for="item in options1" :key="item.value" :label="item.label" :value="item.value"/>
+                </el-select>
+            </div>
+            <div class="search-item">
+                <span class="title-select">機種</span>
+                <el-select v-model="valueSelect2" placeholder="">
+                    <el-option v-for="item in options2" :key="item.value" :label="item.label" :value="item.value"/>
+                </el-select>
+            </div>
+            <div class="search-item">
+                <span class="title-select">種名</span>
+                <el-select v-model="valueSelect3" placeholder="">
+                    <el-option v-for="item in options3" :key="item.value" :label="item.label" :value="item.value"/>
+                </el-select>
+            </div>
+            <div class="search-item">
+                <span class="title-select">作業種別</span>
+                <el-select v-model="valueSelect4" placeholder="">
+                    <el-option v-for="item in options4" :key="item.value" :label="item.label" :value="item.value"/>
+                </el-select>
+            </div>
+        </div>
+        <h3>
+            詳細条件
+        </h3>
+        <div class="search-container">
+            <div class="search-item one">
+                <span class="title-select">期間</span>
+                <el-date-picker v-model="datepicker" type="daterange" range-separator="~"/>
+            </div>
+            <div class="search-item two">
+                <span class="title-select">作業番号</span>
+                <el-input v-model="inputValue"></el-input>
+            </div>
+            <div class="search-item four">
+                <el-button>検索</el-button>
+            </div>
+        </div>
+        <div v-if="isMobile">
+            <div class="flex-container" v-for="(item, index) in tableData1">
+                <el-table :data="tableData1[index]" border style="margin-top: 10px;" :header-cell-style="customHeader">
+                    <el-table-column prop="column1" label="作業番号" align="center" min-width="25" :resizable="false"></el-table-column>
+                    <el-table-column prop="column2" label="作業件名" header-align="center" min-width="75" :resizable="false">
+                        <template #default="scope">
+                            <a href="">{{ scope.row.column2 }}</a>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <el-table :data="tableData2[index]" border style="margin-top: -1px;" :header-cell-style="customHeader">
+                    <el-table-column prop="column3" label="垂気所" align="center" min-width="30" :resizable="false"></el-table-column>
+                    <el-table-column prop="column4" label="実施期間" align="center" min-width="45" :resizable="false"></el-table-column>
+                    <el-table-column prop="column5" label="種別" align="center" min-width="25" :resizable="false"></el-table-column>
+                </el-table>
+            </div>
+        </div>
+        <div v-else>
+            <div>
+                <div class="flex-container">
+                    <el-table :data="tableData" border :header-cell-style="customHeader">
+                        <el-table-column prop="column1" label="作業番号" min-width="10" align="center" :resizable="false"></el-table-column>
+                        <el-table-column prop="column2" label="作業件名" min-width="50" header-align="center" :resizable="false">
+                            <template #default="scope">
+                                <a href="">{{ scope.row.column2 }}</a>
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="column3" label="垂気所" min-width="10" align="center" :resizable="false"></el-table-column>
+                        <el-table-column prop="column4" label="実施期間" min-width="20" align="center" :resizable="false"></el-table-column>
+                        <el-table-column prop="column5" label="種別" min-width="10" align="center" :resizable="false"></el-table-column>
+                    </el-table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp, ref, computed } = Vue;
+        createApp({
+            setup() {
+                const datepicker = ref();
+                const inputValue = ref();
+
+                const valueSelect1 = ref();
+                const options1 = [
+                    {
+                        value: '1',
+                        label: '北九州小倉地区',
+                    },
+                ];
+
+                const valueSelect2 = ref();
+                const options2 = [
+                    {
+                        value: '1',
+                        label: '遮断器',
+                    },
+                ];
+
+
+                const valueSelect3 = ref();
+                const options3 = [];
+
+                const valueSelect4 = ref();
+                const options4 = [
+                    {
+                        value: '1',
+                        label: '定期点検',
+                    },
+                ];
+                const tableData = ref([
+                    { column1: "233812", column2: "西谷ss 20-40 220kvガス絶经開間装置外部点検(油圧)", column3: "西谷交電所", column4: "2025/1/10~2025/1/21", column5: "外部点検"},
+                    { column1: "278327", column2: "西谷ss 5-10 GC5 外部点換", column3: "西谷交電所", column4: "2025/1/10~2025/1/22", column5: "外部点検"},
+                    { column1: "84743", column2: "西谷ss H- 10 6kV以下VCB(220kV SI S試験含む) 真空バルプ耐圧試験", column3: "西谷交電所", column4: "2025/1/12~2025/3/1", column5: "外部点検"},
+                    { column1: "212333", column2: "西谷ss SR-30 6kvガスしゃ断器外部点換", column3: "西谷交電所", column4: "2025/1/14~2025/3/2", column5: "外部点検"},
+                    { column1: "32232", column2: "西谷ss 6-180 GCB 外部点検", column3: "西谷交電所", column4: "2025/1/20~2025/2/10", column5: "外部点検"},
+                    { column1: "837832", column2: "西谷ss 5-20 GCB 外部点検", column3: "西谷交電所", column4: "2025/1/21~2025/3/10", column5: "外部点検"},
+                    { column1: "9949", column2: "西谷ss 5-20 GCB 外部点検", column3: "西谷交電所", column4: "2025/1/23~2025/2/20", column5: "外部点検"},
+                ]);
+
+                let tableData1 = [];
+                let tableData2 = [];
+
+                const isMobile = computed(() => window.innerWidth < 800);
+                for (let i = 0; i < tableData._value.length; i++) {
+                    tableData1.push([{
+                        column1: tableData._value[i].column1,
+                        column2: tableData._value[i].column2,
+                    }])
+
+
+                    tableData2.push([{
+                        column3: tableData._value[i].column3,
+                        column4: tableData._value[i].column4,
+                        column5: tableData._value[i].column5,
+                    }])
+                }
+
+                const customHeader = () => {
+                    return {
+                        background: "#33CCFF",
+                        color: "black"
+                    }
+                }
+                
+                console.log(tableData1)
+
+                return { datepicker, inputValue, valueSelect1, options1, valueSelect2, options2, valueSelect3, options3, valueSelect4, options4, tableData, tableData1, tableData2, isMobile, customHeader };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>
